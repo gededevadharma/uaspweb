@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Dokumentasi Sistem Manajemen Perpustakaan</title>
+<style>
+@page { margin: 2cm; }
+body { font-family: 'Segoe UI', Tahoma, sans-serif; font-size: 11pt; line-height: 1.6; color: #333; }
+h1 { text-align: center; font-size: 22pt; color: #2c3e50; margin-bottom: 5px; }
+h2 { font-size: 16pt; color: #2c3e50; border-bottom: 2px solid #2c3e50; padding-bottom: 5px; margin-top: 30px; }
+h3 { font-size: 13pt; color: #34495e; margin-top: 20px; }
+h4 { font-size: 11pt; color: #555; margin-top: 15px; }
+.subtitle { text-align: center; font-size: 13pt; color: #666; margin-bottom: 30px; }
+table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 10pt; }
+th { background: #2c3e50; color: white; padding: 8px 10px; text-align: left; }
+td { padding: 6px 10px; border-bottom: 1px solid #ddd; }
+tr:nth-child(even) td { background: #f8f9fa; }
+code { background: #eee; padding: 1px 5px; border-radius: 3px; font-family: Consolas, monospace; font-size: 10pt; }
+pre { background: #f4f4f4; padding: 10px; border-left: 3px solid #2c3e50; overflow-x: auto; font-size: 9pt; }
+.footer { text-align: center; font-size: 9pt; color: #999; margin-top: 40px; border-top: 1px solid #ddd; padding-top: 10px; }
+.box { background: #f0f4f8; border: 1px solid #d0d8e0; padding: 15px; border-radius: 8px; margin: 10px 0; }
+.tag { display: inline-block; background: #2c3e50; color: white; padding: 2px 8px; border-radius: 3px; font-size: 9pt; margin: 2px; }
+.tag-blue { background: #3498db; }
+.tag-green { background: #27ae60; }
+.tag-red { background: #e74c3c; }
+.tag-orange { background: #f39c12; }
+.page-break { page-break-before: always; }
+</style>
+</head>
+<body>
+
+<h1>SISTEM MANAJEMEN PERPUSTAKAAN</h1>
+<p class="subtitle">Documentasi Teknis Frontend &amp; Backend</p>
+
+<!-- ============================================================ -->
+<h2>BAGIAN 1: ARSITEKTUR APLIKASI</h2>
+
+<h3>1.1 Pola MVC (Model-View-Controller)</h3>
+<p>Aplikasi ini menggunakan framework <strong>CodeIgniter 3</strong> dengan pola arsitektur MVC:</p>
+
+<table>
+<tr><th style="width:120px">Komponen</th><th>Fungsi</th><th>Lokasi Folder</th></tr>
+<tr><td><strong>Model</strong></td><td>Logika database, query SQL, manipulasi data</td><td><code>application/models/</code></td></tr>
+<tr><td><strong>View</strong></td><td>Template HTML, tampilan antarmuka pengguna</td><td><code>application/views/</code></td></tr>
+<tr><td><strong>Controller</strong></td><td>Penghubung Model &amp; View, logika bisnis, routing request</td><td><code>application/controllers/</code></td></tr>
+</table>
+
+<p><strong>Alur Request:</strong></p>
+<pre>
+Browser → URL → Router (application/config/routes.php)
+       → Controller (memproses logika bisnis)
+       → Model (jika perlu data database)
+       → View (render HTML)
+       → Browser (menampilkan hasil)
+</pre>
+
+<h3>1.2 Struktur Folder</h3>
+<table>
+<tr><th>Folder</th><th>Isi</th></tr>
+<tr><td><code>controllers/</code></td><td>Controller untuk user umum (member)</td></tr>
+<tr><td><code>controllers/admin/</code></td><td>Controller khusus admin</td></tr>
+<tr><td><code>views/</code></td><td>View untuk user umum</td></tr>
+<tr><td><code>views/admin/</code></td><td>View khusus admin</td></tr>
+<tr><td><code>views/templates/</code></td><td>Template bersama (header, footer, sidebar)</td></tr>
+<tr><td><code>models/</code></td><td>Semua model database</td></tr>
+<tr><td><code>config/</code></td><td>Konfigurasi (database, routing, autoload)</td></tr>
+<tr><td><code>helpers/</code></td><td>Fungsi bantu (URL, form, text)</td></tr>
+</table>
+
+<div class="page-break"></div>
+
+<!-- ============================================================ -->
+<h2>BAGIAN 2: BACKEND (SERVER-SIDE)</h2>
+
+<h3>2.1 Database</h3>
+<p><strong>DBMS:</strong> MySQL via phpMyAdmin/XAMPP<br>
+<strong>Nama Database:</strong> <code>db_perpus</code></p>
+
+<h4>Tabel &amp; Relasi</h4>
+<pre>
+┌──────────────────────────────────────────────────────────┐
+│                     DATABASE                             │
+├──────────────┐  ┌──────────────────┐  ┌───────────────┤
+│    buku      │  │   peminjaman     │  │   peminjam    │
+├──────────────┤  ├──────────────────┤  ├───────────────┤
+│ id (PK)      │←┐│ id (PK)          │←┐│ id (PK)       │
+│ judul        │ ││ peminjam_id (FK) │──│ nama          │
+│ pengarang    │ └│ buku_id (FK)     │  │ no_hp         │
+│ penerbit     │  │ tgl_pinjam       │  │ alamat        │
+│ isbn         │  │ tgl_kembali      │  │ created_at    │
+│ tahun        │  │ tgl_dikembalikan │  └───────────────┘
+│ jumlah       │  │ status (enum)    │
+│ tersedia     │  │ created_at       │  ┌───────────────┐
+│ deskripsi    │  └──────────────────┘  │    users      │
+│ created_at   │                        ├───────────────┤
+└──────────────┘                        │ id (PK)       │
+                                        │ username      │
+  FK = Foreign Key                      │ password (bcrypt)
+  CASCADE DELETE                        │ nama          │
+                                        │ email         │
+                                        │ level (admin) │
+                                        └───────────────┘
+</pre>
+
+<h4>DDL (Data Definition Language)</h4>
+<pre>
+CREATE TABLE buku (
+    id INT(11) AUTO_INCREMENT PRIMARY KEY,
+    judul VARCHAR(200) NOT NULL,
+    pengarang VARCHAR(150),
+    penerbit VARCHAR(150),
+    isbn VARCHAR(20) UNIQUE,
+    tahun INT(4),
+    jumlah INT(5) DEFAULT 1,
+    tersedia INT(5) DEFAULT 1,
+    deskripsi TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE peminjam (
+    id INT(11) AUTO_INCREMENT PRIMARY KEY,
+    nama VARCHAR(100) NOT NULL,
+    no_hp VARCHAR(20),
+    alamat TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE peminjaman (
+    id INT(11) AUTO_INCREMENT PRIMARY KEY,
+    peminjam_id INT(11) NOT NULL,
+    buku_id INT(11) NOT NULL,
+    tgl_pinjam DATE NOT NULL,
+    tgl_kembali DATE NOT NULL,
+    tgl_dikembalikan DATE,
+    status ENUM('dipinjam','dikembalikan') DEFAULT 'dipinjam',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (peminjam_id) REFERENCES peminjam(id) ON DELETE CASCADE,
+    FOREIGN KEY (buku_id) REFERENCES buku(id) ON DELETE CASCADE
+);
+</pre>
+
+<div class="page-break"></div>
+
+<h3>2.2 Controller &amp; Method</h3>
+
+<h4>Auth Controller (<code>controllers/Auth.php</code>)</h4>
+<table>
+<tr><th>Method</th><th>Fungsi</th><th>Alur</th></tr>
+<tr><td><code>login()</code></td><td>Autentikasi pengguna</td><td>Form → validasi → <code>user_model->login()</code> (bcrypt verify) → set session → redirect dashboard</td></tr>
+<tr><td><code>logout()</code></td><td>Keluar dari sistem</td><td><code>session->sess_destroy()</code> → redirect login</td></tr>
+</table>
+
+<h4>Buku Controller (<code>controllers/Buku.php</code>)</h4>
+<table>
+<tr><th>Method</th><th>HTTP</th><th>Fungsi</th></tr>
+<tr><td><code>index()</code></td><td>GET</td><td>List buku dengan search + pagination (limit 10/halaman)</td></tr>
+<tr><td><code>tambah()</code></td><td>GET/POST</td><td>Form tambah buku → validasi → <code>buku_model->insert()</code></td></tr>
+<tr><td><code>edit($id)</code></td><td>GET/POST</td><td>Form edit → validasi (isbn unique) → update</td></tr>
+<tr><td><code>hapus($id)</code></td><td>GET</td><td>Delete buku (CASCADE hapus peminjaman terkait)</td></tr>
+<tr><td><code>detail($id)</code></td><td>GET</td><td>Lihat detail lengkap buku</td></tr>
+</table>
+
+<h4>Peminjaman Controller (<code>controllers/Peminjaman.php</code>)</h4>
+<table>
+<tr><th>Method</th><th>HTTP</th><th>Fungsi</th></tr>
+<tr><td><code>index()</code></td><td>GET</td><td>List peminjaman dengan filter status (Semua/Dipinjam/Dikembalikan/Terlambat), search, pagination</td></tr>
+<tr><td><code>tambah()</code></td><td>GET/POST</td><td>Input nama+no_hp+alamat peminjam → insert peminjam baru → insert peminjaman → kurangi stok buku (dalam 1 transaksi)</td></tr>
+<tr><td><code>kembali($id)</code></td><td>GET</td><td>Update status → set tgl_dikembalikan → tambah stok buku</td></tr>
+</table>
+
+<div class="page-break"></div>
+
+<h3>2.3 Model &amp; Query Utama</h3>
+
+<h4>Buku_model</h4>
+<table>
+<tr><th>Method</th><th>SQL</th></tr>
+<tr><td><code>get_all()</code></td><td><code>SELECT * FROM buku ORDER BY created_at DESC LIMIT ? OFFSET ?</code></td></tr>
+<tr><td><code>count_all()</code></td><td><code>SELECT COUNT(*) FROM buku WHERE ...</code></td></tr>
+<tr><td><code>kurangi_tersedia($id)</code></td><td><code>UPDATE buku SET tersedia = tersedia - 1 WHERE id = ? AND tersedia > 0</code></td></tr>
+<tr><td><code>tambah_tersedia($id)</code></td><td><code>UPDATE buku SET tersedia = tersedia + 1 WHERE id = ?</code></td></tr>
+</table>
+
+<h4>Peminjaman_model — Query Join Utama</h4>
+<pre>
+$this->db->select('peminjaman.*, 
+    peminjam.nama as nama_peminjam, 
+    peminjam.no_hp, 
+    peminjam.alamat, 
+    buku.judul as judul_buku, 
+    buku.pengarang, 
+    buku.penerbit, 
+    buku.isbn');
+$this->db->from('peminjaman');
+$this->db->join('peminjam', 'peminjam.id = peminjaman.peminjam_id', 'left');
+$this->db->join('buku', 'buku.id = peminjaman.buku_id', 'left');
+$this->db->order_by('peminjaman.created_at', 'DESC');
+
+// Filter terlambat:
+if ($status == 'terlambat') {
+    $this->db->where('peminjaman.status', 'dipinjam');
+    $this->db->where('peminjaman.tgl_kembali <', date('Y-m-d'));
+}
+</pre>
+
+<h4>Fitur Terlambat (Logika)</h4>
+<p>Deteksi keterlambatan dilakukan di <strong>View</strong> dengan PHP:</p>
+<pre>
+$terlambat = ($p->status == 'dipinjam' && strtotime($p->tgl_kembali) < time());
+// Jika true → badge merah "Terlambat" + baris table-danger
+</pre>
+
+<h3>2.4 Autoload (Pemuatan Otomatis)</h3>
+<p>Di <code>config/autoload.php</code>:</p>
+<table>
+<tr><th>Tipe</th><th>Dimuat Otomatis</th></tr>
+<tr><td>Library</td><td><code>database</code>, <code>session</code>, <code>form_validation</code></td></tr>
+<tr><td>Helper</td><td><code>url</code>, <code>form</code>, <code>html</code>, <code>string</code>, <code>text</code></td></tr>
+<tr><td>Model</td><td><code>user_model</code>, <code>buku_model</code>, <code>peminjam_model</code>, <code>peminjaman_model</code></td></tr>
+</table>
+<p><em>Catatan: Karena model di-autoload, semua controller bisa mengakses <code>$this->buku_model</code>, <code>$this->peminjaman_model</code>, dll tanpa perlu <code>$this->load->model()</code>.</em></p>
+
+<div class="page-break"></div>
+
+<!-- ============================================================ -->
+<h2>BAGIAN 3: FRONTEND (CLIENT-SIDE)</h2>
+
+<h3>3.1 Teknologi yang Digunakan</h3>
+<table>
+<tr><th>Teknologi</th><th>Versi</th><th>Penggunaan</th><th>Sumber</th></tr>
+<tr><td>Bootstrap</td><td>5.3.2</td><td>Layout grid, card, table, form, modal, button, badge, pagination, alert</td><td>CDN</td></tr>
+<tr><td>Bootstrap Icons</td><td>1.11.2</td><td>Ikon untuk tombol, menu, stat card</td><td>CDN</td></tr>
+<tr><td>JavaScript</td><td>ES5/ES6</td><td>Interaktivitas modal, autofill tanggal, flash message dismiss</td><td>Built-in</td></tr>
+</table>
+
+<h3>3.2 Font</h3>
+<table>
+<tr><th>Font</th><th>Tipe</th><th>Digunakan di</th></tr>
+<tr><td><strong>'Segoe UI'</strong></td><td>Sans-serif (Windows)</td><td>Body, headings, sidebar, tabel — font utama aplikasi</td></tr>
+<tr><td><strong>Tahoma</strong></td><td>Sans-serif</td><td>Fallback jika Segoe UI tidak tersedia</td></tr>
+<tr><td><strong>sans-serif</strong></td><td>Generic</td><td>Fallback terakhir</td></tr>
+</table>
+
+<h3>3.3 Layout (Sidebar + Content)</h3>
+<pre>
+┌────────────────┬──────────────────────────────────────────────┐
+│  SIDEBAR       │               CONTENT AREA                   │
+│  (fixed 250px) │                                              │
+│                │  ┌─ Navbar ──────────────────────────────┐   │
+│  ☰ Dashboard   │  │  Judul Halaman        👤 Nama User    │   │
+│  📚 Buku       │  └────────────────────────────────────────┘   │
+│  📝 Peminjaman │                                              │
+│                │  ┌─ Flash Message (success/error) ────────┐   │
+│  🚪 Logout     │  │  ✓/✗ Pesan                            │   │
+│                │  └────────────────────────────────────────┘   │
+│                │                                              │
+│                │  ┌─ Card ─────────────────────────────────┐   │
+│                │  │  [Tabel/Form/Konten]                   │   │
+│                │  │                                        │   │
+│                │  └────────────────────────────────────────┘   │
+│                │                                              │
+│                │  ┌────────────────────────────────────────┐   │
+│                │  │  © Footer                              │   │
+│                │  └────────────────────────────────────────┘   │
+└────────────────┴──────────────────────────────────────────────┘
+</pre>
+
+<h3>3.4 Komponen UI Utama</h3>
+
+<h4>a) Stat Cards (Dashboard)</h4>
+<p>Kartu statistik dengan gradien dan ikon besar:</p>
+<pre>
+&lt;div class="card stat-card" style="background: linear-gradient(135deg, #667eea, #764ba2);"&gt;
+    &lt;div class="jumlah"&gt;42&lt;/div&gt;
+    &lt;small&gt;Total Buku&lt;/small&gt;
+    &lt;i class="bi bi-book-fill"&gt;&lt;/i&gt;
+&lt;/div&gt;
+</pre>
+
+<h4>b) Status Badge</h4>
+<table>
+<tr><th>Status</th><th>CSS Class</th><th>Warna</th></tr>
+<tr><td><span class="tag tag-green">Dikembalikan</span></td><td><code>badge bg-success</code></td><td>Hijau (#27ae60)</td></tr>
+<tr><td><span class="tag tag-orange">Dipinjam</span></td><td><code>badge bg-warning text-dark</code></td><td>Kuning (#f39c12)</td></tr>
+<tr><td><span class="tag tag-red">Terlambat</span></td><td><code>badge bg-danger</code></td><td>Merah (#e74c3c)</td></tr>
+</table>
+
+<div class="page-break"></div>
+
+<h4>c) Modal Konfirmasi (Bootstrap 5)</h4>
+<p>Semua aksi hapus dan pengembalian menggunakan modal, bukan <code>confirm()</code> JavaScript:</p>
+<pre>
+&lt;!-- Tombol trigger --&gt;
+&lt;button type="button" class="btn btn-danger btn-sm" 
+    data-bs-toggle="modal" data-bs-target="#hapusBukuModal"
+    data-id="&lt;?= $b->id ?&gt;"
+    data-judul="&lt;?= htmlspecialchars($b->judul) ?&gt;"&gt;
+    &lt;i class="bi bi-trash"&gt;&lt;/i&gt;
+&lt;/button&gt;
+
+&lt;!-- Modal --&gt;
+&lt;div class="modal fade" id="hapusBukuModal"&gt;
+    &lt;div class="modal-dialog"&gt;
+        &lt;div class="modal-content"&gt;
+            &lt;div class="modal-header"&gt;
+                &lt;h5&gt;Konfirmasi Hapus&lt;/h5&gt;
+                &lt;button type="button" class="btn-close" data-bs-dismiss="modal"&gt;
+            &lt;/div&gt;
+            &lt;div class="modal-body text-center"&gt;
+                &lt;p&gt;Yakin ingin menghapus?&lt;/p&gt;
+            &lt;/div&gt;
+            &lt;div class="modal-footer"&gt;
+                &lt;button class="btn btn-secondary" data-bs-dismiss="modal"&gt;Batal&lt;/button&gt;
+                &lt;a href="#" id="hapusBukuLink" class="btn btn-danger"&gt;Ya, Hapus&lt;/a&gt;
+            &lt;/div&gt;
+        &lt;/div&gt;
+    &lt;/div&gt;
+&lt;/div&gt;
+
+&lt;script&gt;
+// Mengisi data ke modal saat tombol diklik
+modal.addEventListener('show.bs.modal', function(event) {
+    var btn = event.relatedTarget;
+    document.getElementById('hapusBukuLink').href = 
+        '&lt;?= base_url('buku/hapus/') ?&gt;' + btn.getAttribute('data-id');
+});
+&lt;/script&gt;
+</pre>
+
+<h4>d) Search &amp; Pagination</h4>
+<p><strong>Search:</strong> Input teks → GET parameter <code>?search=...</code> → Controller filter via <code>LIKE</code> query</p>
+<p><strong>Pagination:</strong> Parameter <code>?page=N</code> → <code>LIMIT 10 OFFSET (page-1)*10</code></p>
+
+<h4>e) Filter Status (Peminjaman)</h4>
+<p>Tombol filter: <code>?status=dipinjam</code>, <code>?status=dikembalikan</code>, <code>?status=terlambat</code></p>
+<p>Untuk status <strong>terlambat</strong>, filter dilakukan di model dengan kondisi:</p>
+<pre>
+WHERE peminjaman.status = 'dipinjam' 
+  AND peminjaman.tgl_kembali < CURDATE()
+</pre>
+
+<h4>f) Detail Modal (View Peminjaman)</h4>
+<p>Tombol 👁️ (View) pada setiap baris peminjaman membuka modal yang menampilkan:</p>
+<ul>
+  <li><strong>Data Peminjam:</strong> Nama, No. HP, Alamat</li>
+  <li><strong>Data Buku:</strong> Judul, Pengarang, Penerbit, ISBN</li>
+  <li><strong>Data Peminjaman:</strong> Tgl Pinjam, Tgl Kembali, Tgl Dikembalikan, Status</li>
+</ul>
+
+<div class="page-break"></div>
+
+<h3>3.5 CSS Kustom (admin_header.php)</h3>
+<table>
+<tr><th>Class/Element</th><th>CSS</th></tr>
+<tr><td><code>.sidebar</code></td><td>Fixed left, width 250px, gradient background #2c3e50 → #1a252f</td></tr>
+<tr><td><code>.navbar-admin</code></td><td>White background, border-radius 15px, box-shadow</td></tr>
+<tr><td><code>.card</code></td><td>Border-radius 15px, box-shadow, hover: translateY(-3px)</td></tr>
+<tr><td><code>.stat-card</code></td><td>Padding 20px, white text, large icon (2.5rem), large number (2rem)</td></tr>
+<tr><td><code>.search-box</code></td><td>Border-radius 25px, border 2px #e9ecef, focus: border-color #2c3e50</td></tr>
+<tr><td><code>.table th</code></td><td>Background #f8f9fa, color #2c3e50, font-weight 600</td></tr>
+</table>
+
+<!-- ============================================================ -->
+<div class="page-break"></div>
+<h2>BAGIAN 4: FITUR &amp; ALUR APLIKASI</h2>
+
+<h3>4.1 Menu Navigasi</h3>
+<p>Sidebar hanya memiliki 3 menu utama + Logout:</p>
+<ol>
+  <li><strong>Dashboard</strong> — Ringkasan data: Total Buku, Total Peminjam, Dikembalikan + 3 tabel (Peminjaman, Buku, Peminjam Terbaru)</li>
+  <li><strong>Kelola Buku</strong> — CRUD buku + detail + search + pagination</li>
+  <li><strong>Kelola Peminjaman</strong> — Catat peminjaman, pengembalian, view detail, filter status, deteksi terlambat</li>
+</ol>
+
+<h3>4.2 Alur Transaksi Peminjaman</h3>
+<pre>
+┌──────────────┐
+│  Login       │  admin / 123123
+└──────┬───────┘
+       ▼
+┌──────────────┐
+│  Dashboard   │  Lihat statistik &amp; data terbaru
+└──────┬───────┘
+       ▼
+┌──────────────┐
+│  Kelola      │  Klik "Tambah Peminjaman"
+│  Peminjaman  │
+└──────┬───────┘
+       ▼
+┌───────────────────────────────────────────────┐
+│  Form Peminjaman                               │
+│  ┌─────────────────────────────────────────┐   │
+│  │ Nama: [Budi]   No HP: [0812...]         │   │
+│  │ Alamat: [Jl. Merdeka No.1]              │   │
+│  │ Tgl Pinjam: [2026-07-04]                │   │
+│  │ Tgl Kembali: [2026-07-11] (auto +7)     │   │
+│  │ Buku: [Laskar Pelangi ▼]                │   │
+│  └─────────────────────────────────────────┘   │
+│  [Simpan Peminjaman]                           │
+└──────┬────────────────────────────────────────┘
+       ▼
+┌───────────────────────────────────────────────┐
+│  Proses Backend (dalam 1 TRANSACTION)          │
+│  1. INSERT INTO peminjam (nama, no_hp, alamat) │
+│  2. INSERT INTO peminjaman (..., 'dipinjam')  │
+│  3. UPDATE buku SET tersedia = tersedia - 1    │
+│  → COMMIT                                      │
+└──────┬────────────────────────────────────────┘
+       ▼
+┌──────────────────┐
+│  Redirect ke list │  Lihat hasil peminjaman
+│  Peminjaman       │
+└──────────────────┘
+</pre>
+
+<h3>4.3 Alur Pengembalian Buku</h3>
+<pre>
+Lihat list peminjaman → Status "Dipinjam" → Klik tombol Kembali (↩)
+  → Modal Konfirmasi → Ya
+    → UPDATE peminjaman SET status='dikembalikan', tgl_dikembalikan=NOW()
+    → UPDATE buku SET tersedia = tersedia + 1
+    → Flash message success
+</pre>
+
+<h3>4.4 Fitur Terlambat</h3>
+<p>Deteksi otomatis: Jika hari ini &gt; tgl_kembali dan status masih "dipinjam":</p>
+<ul>
+  <li>Badge merah <strong>"Terlambat"</strong> pada kolom status</li>
+  <li>Baris tabel berwarna merah (<code>table-danger</code>)</li>
+  <li>Filter khusus "Terlambat" untuk melihat semua peminjaman yang melewati batas</li>
+</ul>
+
+<div class="page-break"></div>
+
+<!-- ============================================================ -->
+<h2>BAGIAN 5: ROUTING &amp; KONFIGURASI</h2>
+
+<h3>5.1 Routes (<code>config/routes.php</code>)</h3>
+<pre>
+$route['default_controller'] = 'auth/login';
+
+// Auth
+$route['login']    = 'auth/login';
+$route['logout']   = 'auth/logout';
+
+// Dashboard
+$route['dashboard'] = 'dashboard/index';
+
+// Buku
+$route['buku']                = 'buku/index';
+$route['buku/tambah']         = 'buku/tambah';
+$route['buku/edit/(:num)']    = 'buku/edit/$1';
+$route['buku/hapus/(:num)']   = 'buku/hapus/$1';
+$route['buku/detail/(:num)']  = 'buku/detail/$1';
+
+// Peminjaman
+$route['peminjaman']                = 'peminjaman/index';
+$route['peminjaman/tambah']         = 'peminjaman/tambah';
+$route['peminjaman/kembali/(:num)'] = 'peminjaman/kembali/$1';
+</pre>
+<p><strong>Catatan:</strong> Admin menggunakan prefix <code>admin/</code> → contoh: <code>admin/buku</code> → controller <code>admin/Buku.php</code>. Namun karena tidak ada aturan routing eksplisit untuk admin, CodeIgniter secara otomatis menangani sub-direktori controller.</p>
+
+<h3>5.2 Database Config (<code>config/database.php</code>)</h3>
+<pre>
+$db['default'] = array(
+    'hostname' => 'localhost',
+    'username' => 'root',
+    'password' => '',
+    'database' => 'db_perpus',
+    'dbdriver' => 'mysqli',
+    'db_debug' => (ENVIRONMENT !== 'production'),
+    'char_set' => 'utf8',
+    'dbcollat' => 'utf8_general_ci'
+);
+</pre>
+
+<h3>5.3 Base URL (Dinamis)</h3>
+<pre>
+$config['base_url'] = ((isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == 'on') 
+    ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'] 
+    . '/' . trim(str_replace($_SERVER['DOCUMENT_ROOT'], '', 
+    str_replace('\\', '/', FCPATH)), '/') . '/';
+</pre>
+<p>Tidak perlu hardcode localhost — otomatis menyesuaikan server.</p>
+
+<div class="page-break"></div>
+
+<!-- ============================================================ -->
+<h2>BAGIAN 6: PASSWORD &amp; KEAMANAN</h2>
+
+<h3>6.1 Autentikasi</h3>
+<table>
+<tr><th>Aspek</th><th>Detail</th></tr>
+<tr><td>Default Login</td><td>Username: <strong>admin</strong>, Password: <strong>123123</strong></td></tr>
+<tr><td>Hash Password</td><td>Bcrypt via <code>password_hash()</code> / <code>password_verify()</code></td></tr>
+<tr><td>Session</td><td>File-based, disimpan di <code>application/cache/</code></td></tr>
+<tr><td>Session Data</td><td><code>id</code>, <code>username</code>, <code>nama</code>, <code>level</code>, <code>logged_in</code></td></tr>
+<tr><td>Session Lifetime</td><td>7200 detik (2 jam), <code>sess_regenerate_destroy = FALSE</code></td></tr>
+</table>
+
+<h3>6.2 Proteksi Controller</h3>
+<p>Semua controller (kecuali Auth) memiliki konstruktor yang memeriksa session:</p>
+<pre>
+public function __construct() {
+    parent::__construct();
+    if (!$this->session->userdata('logged_in')) {
+        redirect('login');  // Redirect ke halaman login jika belum login
+    }
+}
+</pre>
+
+<!-- ============================================================ -->
+<div class="page-break"></div>
+<h2>BAGIAN 7: PERUBAHAN &amp; FITUR TERBARU</h2>
+
+<table>
+<tr><th style="width:30px">No</th><th>Perubahan</th><th>Detail</th></tr>
+<tr>
+  <td>1</td>
+  <td><strong>Dashboard 3 Cards + 3 Tabel</strong></td>
+  <td>Stat cards: Total Buku, Total Peminjam, Dikembalikan. Tabel: Peminjaman Terbaru, Buku Terbaru, Peminjam Terbaru</td>
+</tr>
+<tr>
+  <td>2</td>
+  <td><strong>Menu Data Peminjam Dihapus</strong></td>
+  <td>Sidebar hanya Dashboard, Buku, Peminjaman. Tambah peminjam hanya dari form peminjaman</td>
+</tr>
+<tr>
+  <td>3</td>
+  <td><strong>Dropdown "Pilih Existing" Dihapus</strong></td>
+  <td>Form peminjaman langsung input nama + no_hp + alamat → insert peminjam baru otomatis</td>
+</tr>
+<tr>
+  <td>4</td>
+  <td><strong>Status Terlambat</strong></td>
+  <td>Deteksi otomatis + badge merah + baris merah + filter khusus</td>
+</tr>
+<tr>
+  <td>5</td>
+  <td><strong>Tombol View Detail</strong></td>
+  <td>Modal menampilkan data lengkap peminjam, buku, dan peminjaman</td>
+</tr>
+<tr>
+  <td>6</td>
+  <td><strong>Modal Konfirmasi</strong></td>
+  <td>Semua aksi hapus &amp; pengembalian menggunakan Bootstrap Modal</td>
+</tr>
+<tr>
+  <td>7</td>
+  <td><strong>Base URL Dinamis</strong></td>
+  <td>Otomatis, tanpa hardcode localhost</td>
+</tr>
+<tr>
+  <td>8</td>
+  <td><strong>Tabel Peminjaman Diperkaya</strong></td>
+  <td>Kolom baru: No. HP, Alamat peminjam. Info tambahan di view modal</td>
+</tr>
+</table>
+
+<div class="footer">
+    <p>Dokumentasi Sistem Manajemen Perpustakaan — CodeIgniter 3 + Bootstrap 5 + MySQL</p>
+</div>
+
+</body>
+</html>
